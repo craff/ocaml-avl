@@ -96,7 +96,7 @@ module Make(Ord: OrderedType) =
       let cl = match l with Empty -> 0 | Node {c; _} -> c in
       let cr = match r with Empty -> 0 | Node {c; _} -> c in
       (* TO DO: remove assertion when we are sure *)
-      assert (cl <= 2 * cr + 1 && cr <= 2 * cl + 1);
+      assert (cl <= 2 * cr + 3 && cr <= 2 * cl + 3);
       Node{l; v; r; c=cl+cr+1}
 
     (* Same as create, but performs rebalancing if necessary.
@@ -108,7 +108,7 @@ module Make(Ord: OrderedType) =
 
     let rec join l v r =
       let cl = cardinal l and cr = cardinal r in
-      if cl > (cr lsl 1) lor 1 then
+      if cl > (cr lsl 1) + 3 then
         begin
           match l with
           | Empty -> assert false
@@ -123,7 +123,7 @@ module Make(Ord: OrderedType) =
              else
                create ll lv (join lr v r)
         end
-      else if cr > (cl lsl 1) lor 1 then
+      else if cr > (cl lsl 1) + 3 then
         begin
           match r with
           | Empty -> assert false
@@ -143,7 +143,7 @@ module Make(Ord: OrderedType) =
 
     and bal l v r =
       let cl = cardinal l and cr = cardinal r in
-      if cl > (cr lsl 1) lor 1 then
+      if cl > (cr lsl 1) + 3 then
         begin
           match l with
           | Empty -> assert false
@@ -158,7 +158,7 @@ module Make(Ord: OrderedType) =
              else
                create ll lv (join lr v r)
         end
-      else if cr > (cl lsl 1) lor 1 then
+      else if cr > (cl lsl 1) + 3 then
         begin
           match r with
           | Empty -> assert false

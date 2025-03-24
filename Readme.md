@@ -29,53 +29,67 @@ is only done at most three times (the inner calls are one smaller set hence not 
           | Node{l=ll;r=lr;v=lv;_} ->
              if cardinal lr > cardinal ll then
                (* hypothesis:
-	          cll + clr + 1 = cl > 2cr + 1
-                  cll < clr <= 2cll + 1
+	          cll + clr + 1 = cl > 2cr + d
+                  cll < clr <= 2cll + d and threfore
                   clr = clrl + clrr + 1
-                  clrl <= 2clrr + 1
-                  clrr <= 2clrl + 1
+                  clrl <= 2clrr + d
+                  clrr <= 2clrl + d
+
+		  We have 2 cll < cll + clr, hence 2 cll <= cll + clr - 1 <= cl - 2
+		  Thefore, as a lemme we have
+
+                  cll <= cl / 2 - 1
 
 		  Let us define the size of subtrees:
                   cl' = cll + clrl + 1
                   cr' = cr + clrr + 1
 
                   We have:
-                  cr' < 1/2 cll + 1/2 clr + clrl + 1
-                      < 3/2 cll + 1/2 + clrl + 1
-                      < 2 cll + 1 : OK
+                  cr' < 1/2 cll + 1/2 clr + clrl + (1 - d)/2
+                      < 3/2 cll + d/2 + clrl + (1 - d)/2
+		      < 3/2 cll + clrl + (1 + d) / 2
+                      < 3/2 cl' + d : OK (if d > 0)
 
-                  cl' < clr + 2clrr + 2
-                      < clrl + 3clrr + 3
-                      < 5clrr + 4 < 5 cr' - 1: not sufficient
+                  cl' < clr + 2clrr + 1 + d
+		      <= clr + 2clrr + d
+                      <= clrl + 3clrr + 1 + d
+                      <= 5clrr + 1 + 2 d
+		      <= 5 cr' + 2 d - 4: not sufficient
 
                   but if this is the second tail rec call, we have
 
-                  cl = cll + clr + 1 < 5 cr - 1
-                  hence cll <= 5/2 cr - 2
-                  cl' < 5/2 cr - 2 + clrl + 1
-                      < 5/2 cr + 2 clrr
-                      < 5/2 cr' - 5/2
+                  cl = cll + clr + 1 <= 5 cr + 2 d - 4
+                  hence cll <= cl/2 - 1 <= 5/2 cr + d - 3
+                  cl' <= 5/2 cr + d - 3 + clrl + 1
+                      <= 5/2 cr + 2 clrr + 2 d - 2
+                      <= 5/2 cr' + 2 d - 9/2
 
                   and in the third tail rec call, we have
 
-                  cl = cll + clr + 1 < 5/2 cr - 5/2
-                  hence cll <= 5/4 cr - 7/2
-                  cl' < 5/4 cr - 7/2 + clrl + 1
-                      < 5/4 cr - 3/2 + 2 clrr
-                      < 2 cr' - 5/2 which is Ok
+                  cl = cll + clr + 1 <= 5/2 cr + 2 d - 9/2
+                  hence cll <= cl/2 - 1 <= 5/4 cr + d - 13/4
+                  cl' <= 5/4 cr + d - 13/4 + clrl + 1
+                      <= 5/4 cr + 2 clrr + 2 d - 9/4
+                      <= 2 cr' + 2 d - 17/4
+		      <= 2 cr' + d if d < 17/4 (so d = 1 to 4 are ok)
 
 		  We can also show that the second inner recursive call
 		  join ll lv lrl, only need one tail rec call:
 
                   indeed we have ll < lr = lrl + lrr + 1
-		                    < 3 lrl + 2
-		  hence in the recursice call we have
+		                    < 3 lrl + 1 + d
+				    <= 3 lrl + d
 
-                  cl = cll + clr + 1 < 3 cr + 2
-                  hence cll <= 3/2 cr + 1
-                  cl' < 3/2 cr + 1 + clrl + 1
-                      < 3/2 cr + 2 clrr + 3
-                      < 2 cr' + 1
+		  hence in the recursive call we have
+                  cl = cll + clr + 1 <= 3 cr + d
+                  hence cll <= cl/2 - 1
+		            <= 3/2 cr + d/2 - 1
+		            <= 3/2 cr + d/2 - 1
+                  cl' <= 3/2 cr + d/2 + clrl
+                      <= 3/2 cr + 2 clrr + 3/2 d
+                      <= 2 cr' + 3/2 d - 2
+
+                  This is ok if 1/2 d <= 2, i.e d <= 4
                 *)
                begin
                  match lr with
@@ -85,18 +99,20 @@ is only done at most three times (the inner calls are one smaller set hence not 
                end
              else
                (* hypothesis:
-	          cl = cll + clr + 1 > 2cr + 1
+	          cl = cll + clr + 1 > 2cr + d
 		  clr <= cll <= 2 clr + 1
 
 		  Hence:
-                  thus 2 cr + 1 < 2 cll + 1
-                  hence cr < cll
+                  thus 2 cr + d < 2 cll + 1
+                  hence cr < cll + 1 - d
+		           <= cll - d
 
 		  let cr' = clr + cr + 1
-                  we have cr' < clr + cll + 1
-		              < 2 cll + 1.
+                  we have cr' <= clr + cll + 1 - d
+		              <= 2 cll + 1 - d.
+			      <  2 cll + d
 
-		  We also have cll <= 2 clr + 1 < 2 cr' + 1.
+		  We also have cll <= 2 clr + d < 2 cr' + d.
                 *)
                create ll lv (join lr v r)
         end
@@ -126,6 +142,4 @@ The fonction creating node contains an assertion that could be remove when
 other have checked the proof.
 
 We also provide pop_min_elt and pop_max_elt to get the min/max element and remove it at
-the same time. 
-
-
+the same time.
