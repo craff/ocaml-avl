@@ -19,15 +19,16 @@ let rec order_setr1 size s =
 
 let rec random_set01 size maxi =
   if size <= 0 then S1.empty
-  else if size = 1 then S1.singleton (Random.int maxi)
-  else S1.add (Random.int maxi) (random_set01 (size - 1) maxi)
+  else if size = 1 then S1.singleton (Random.full_int maxi)
+  else S1.add (Random.full_int maxi) (random_set01 (size - 1) maxi)
 
 let rec random_set1 size maxi =
-  if size <= 0 then S1.empty
-  else if size = 1 then S1.singleton (Random.int maxi)
+  if size < 0 then invalid_arg "random_set1";
+  if size = 0 then S1.empty
+  else if size = 1 then S1.singleton (Random.full_int maxi)
   else
-    let h1 = size / 2 in
-    let h2 = if size mod 2 = 0 then h1 else h1 + 1 in
+    let h1 = Random.full_int (size+1) in
+    let h2 = size - h1 in
     let s1 = random_set1 h1 maxi in
     let s2 = random_set1 h2 maxi in
     S1.union s1 s2
@@ -46,18 +47,19 @@ let rec order_setr2 size s =
 
 let rec random_set02 size maxi =
   if size <= 0 then S2.empty
-  else if size = 1 then S2.singleton (Random.int maxi)
-  else S2.add (Random.int maxi) (random_set02 (size - 1) maxi)
+  else if size = 1 then S2.singleton (Random.full_int maxi)
+  else S2.add (Random.full_int maxi) (random_set02 (size - 1) maxi)
 
 let check2 s =
   S2.iter (fun x -> assert (S2.mem x s)) s
 
 let rec random_set2 size maxi =
-  if size <= 0 then S2.empty
-  else if size = 1 then S2.singleton (Random.int maxi)
+  if size < 0 then invalid_arg "random_set2";
+  if size = 0 then S2.empty
+  else if size = 1 then S2.singleton (Random.full_int maxi)
   else
-    let h1 = size / 2 in
-    let h2 = if size mod 2 = 0 then h1 else h1 + 1 in
+    let h1 = Random.int (size+1) in
+    let h2 = size - h1 in
     let s1 = random_set2 h1 maxi in
     let s2 = random_set2 h2 maxi in
     S2.union s1 s2
@@ -82,22 +84,30 @@ let chrono ?(stat=fake) f a =
   (dt, x)
 
 let size = 300_000
-let maxi = 100_000_000
+let maxi = max_int
+
+let _ = Printf.printf "Adding %d consecutive integers in a set:\n" size
 
 let dt1, s1 = chrono ~stat:S1.stat order_set1 size
 let dt2, s2 = chrono ~stat:S2.stat order_set2 size
 
 let _ = Printf.printf "ordered add %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
+let _ = Printf.printf "Checking mem on all elements of the above:\n"
+
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
 let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
+let _ = Printf.printf "Removing all elements of the above:\n"
+
 let dt1, _ = chrono (order_setr1 size) s1
 let dt2, _ = chrono (order_setr2 size) s2
 
 let _ = Printf.printf "ordered rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+
+let _ = Printf.printf "\nAdding %d random integers in a set:\n" size
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
@@ -112,15 +122,21 @@ let elts2 = S2.elements s2
 
 let _ = assert (elts1 = elts2)
 
+let _ = Printf.printf "Checking mem on all elements of the above:\n"
+
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
 let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
+let _ = Printf.printf "Removing all elements of the above:\n"
+
 let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
 let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
 
 let _ = Printf.printf "random rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+
+let _ = Printf.printf "\nBuilding set of ~%d elements by random union:\n" size
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
@@ -135,10 +151,14 @@ let elts2 = S2.elements s2
 
 let _ = assert (elts1 = elts2)
 
+let _ = Printf.printf "Checking mem on all elements of the above:\n"
+
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
 let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+
+let _ = Printf.printf "Removing all elements of the above:\n"
 
 let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
 let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
