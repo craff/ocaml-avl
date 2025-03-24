@@ -96,10 +96,20 @@ let dt2, s2 = chrono (random_set02 size) maxi
 
 let _ = Printf.printf "random add %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
+let elts1 = S1.elements s1
+let elts2 = S2.elements s2
+
+let _ = assert (elts1 = elts2)
+
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
 let _ = Printf.printf "check %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+
+let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
+let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
+
+let _ = Printf.printf "random rm %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
@@ -109,7 +119,17 @@ let dt2, s2 = chrono (random_set2 size) maxi
 
 let _ = Printf.printf "random union %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
+let elts1 = S1.elements s1
+let elts2 = S2.elements s2
+
+let _ = assert (elts1 = elts2)
+
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
 let _ = Printf.printf "check %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+
+let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
+let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
+
+let _ = Printf.printf "random union rm %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
