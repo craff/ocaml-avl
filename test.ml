@@ -5,7 +5,7 @@ module Int = struct
   let compare = (-)
 end
 
-module S1 = Set.Make(Int)
+module S1 = Oriset.Make(Int)
 module S2 = Myset.Make(Int)
 
 let rec order_set1 size =
