@@ -70,6 +70,7 @@ module type S =
     val to_rev_seq : t -> elt Seq.t
     val add_seq : elt Seq.t -> t -> t
     val of_seq : elt Seq.t -> t
+    val stat : t -> int * int * float
   end
 
 module Make(Ord: OrderedType) =
@@ -632,4 +633,22 @@ module Make(Ord: OrderedType) =
             end
       in
       seq_of_enum_ (aux low s End)
+
+    let stat t =
+      let mini = ref max_int in
+      let maxi = ref (-1) in
+      let sum = ref 0 in
+      let nb = ref 0 in
+      let rec fn h = function
+        | Empty ->
+           mini := min h !mini;
+           maxi := max h !maxi;
+           sum  := !sum + h;
+           incr nb
+        | Node{l;r;_} ->
+           fn (h+1) l; fn (h+1) r
+      in
+      fn 0 t;
+      (!mini, !maxi, float !sum /. float !nb)
+
   end

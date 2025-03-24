@@ -64,21 +64,28 @@ let rec random_set2 size maxi =
 
 let ori = ref true
 
-let chrono f a =
+let fake _ = (0, 0, 0.0)
+
+let chrono ?(stat=fake) f a =
   let t0 = Unix.gettimeofday() in
   let x = f a in
   let t1 = Unix.gettimeofday() in
   let dt = t1 -. t0 in
   let msg = if !ori then "OCaml's set: " else "Proposal set: " in
   ori := not !ori;
-  Printf.printf "%s: %.5fs, %!" msg dt;
+  let mi, ma, av = stat x in
+  if ma <> 0 then
+    Printf.printf "%s: %.5fs, branches: (min: %d, max: %d, avg: %.1f)\n%!"
+      msg dt mi ma av
+  else
+    Printf.printf "%s: %.5fs\n%!" msg dt;
   (dt, x)
 
 let size = 300_000
 let maxi = 100_000_000
 
-let dt1, s1 = chrono order_set1 size
-let dt2, s2 = chrono order_set2 size
+let dt1, s1 = chrono ~stat:S1.stat order_set1 size
+let dt2, s2 = chrono ~stat:S2.stat order_set2 size
 
 let _ = Printf.printf "ordered add %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
@@ -94,9 +101,9 @@ let _ = Printf.printf "ordered rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
-let dt1, s1 = chrono (random_set01 size) maxi
+let dt1, s1 = chrono ~stat:S1.stat (random_set01 size) maxi
 let _ = Random.init seed
-let dt2, s2 = chrono (random_set02 size) maxi
+let dt2, s2 = chrono ~stat:S2.stat (random_set02 size) maxi
 
 let _ = Printf.printf "random add %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
@@ -117,9 +124,9 @@ let _ = Printf.printf "random rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
-let dt1, s1 = chrono (random_set1 size) maxi
+let dt1, s1 = chrono ~stat:S1.stat (random_set1 size) maxi
 let _ = Random.init seed
-let dt2, s2 = chrono (random_set2 size) maxi
+let dt2, s2 = chrono ~stat:S2.stat (random_set2 size) maxi
 
 let _ = Printf.printf "random union %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 

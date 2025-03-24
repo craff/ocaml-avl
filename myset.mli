@@ -323,6 +323,10 @@ module type S =
     val of_seq : elt Seq.t -> t
     (** Build a set from the given bindings
         @since 4.07 *)
+
+    val stat : t -> int * int * float
+    (** give min, max and average height of a tree *)
+
   end
 (** Output signature of the functor {!Make}. *)
 
