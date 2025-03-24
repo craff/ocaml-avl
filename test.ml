@@ -62,12 +62,16 @@ let rec random_set2 size maxi =
     let s2 = random_set2 h2 maxi in
     S2.union s1 s2
 
+let ori = ref true
+
 let chrono f a =
   let t0 = Unix.gettimeofday() in
   let x = f a in
   let t1 = Unix.gettimeofday() in
   let dt = t1 -. t0 in
-  Printf.printf "%f\n%!" dt;
+  let msg = if !ori then "OCaml's set: " else "Proposal set: " in
+  ori := not !ori;
+  Printf.printf "%s: %.5fs, %!" msg dt;
   (dt, x)
 
 let size = 300_000
@@ -76,17 +80,17 @@ let maxi = 100_000_000
 let dt1, s1 = chrono order_set1 size
 let dt2, s2 = chrono order_set2 size
 
-let _ = Printf.printf "ordered add %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "ordered add %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
-let _ = Printf.printf "check %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let dt1, _ = chrono (order_setr1 size) s1
 let dt2, _ = chrono (order_setr2 size) s2
 
-let _ = Printf.printf "ordered rm %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "ordered rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
@@ -94,7 +98,7 @@ let dt1, s1 = chrono (random_set01 size) maxi
 let _ = Random.init seed
 let dt2, s2 = chrono (random_set02 size) maxi
 
-let _ = Printf.printf "random add %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "random add %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let elts1 = S1.elements s1
 let elts2 = S2.elements s2
@@ -104,12 +108,12 @@ let _ = assert (elts1 = elts2)
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
-let _ = Printf.printf "check %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
 let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
 
-let _ = Printf.printf "random rm %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "random rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let seed = Random.full_int max_int
 let _ = Random.init seed
@@ -117,7 +121,7 @@ let dt1, s1 = chrono (random_set1 size) maxi
 let _ = Random.init seed
 let dt2, s2 = chrono (random_set2 size) maxi
 
-let _ = Printf.printf "random union %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "random union %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let elts1 = S1.elements s1
 let elts2 = S2.elements s2
@@ -127,9 +131,9 @@ let _ = assert (elts1 = elts2)
 let dt1, _ = chrono check1 s1
 let dt2, _ = chrono check2 s2
 
-let _ = Printf.printf "check %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "check mem %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
 
 let dt1, _ = chrono (List.fold_left (fun s x -> S1.remove x s) s1) elts1
 let dt2, _ = chrono (List.fold_left (fun s x -> S2.remove x s) s2) elts2
 
-let _ = Printf.printf "random union rm %f\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
+let _ = Printf.printf "random union rm %.2f%%\n%!" ((dt2 -. dt1) /. dt1 *. 100.)
