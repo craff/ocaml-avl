@@ -98,7 +98,7 @@ module Make(Ord: OrderedType) =
       let cl = match l with Empty -> 0 | Node {c; _} -> c in
       let cr = match r with Empty -> 0 | Node {c; _} -> c in
       (* TO DO: remove assertion when we are sure *)
-      (*assert (cl <= 2 * cr + delta && cr <= 2 * cl + delta);*)
+      assert (cl <= 2 * cr + delta && cr <= 2 * cl + delta);
       Node{l; v; r; c=cl+cr+1}
 
     (* Same as create, but performs rebalancing if necessary.
@@ -115,13 +115,12 @@ module Make(Ord: OrderedType) =
           match l with
           | Empty -> assert false
           | Node{l=ll;r=lr;v=lv;_} ->
-             if cardinal lr > cardinal ll then
+             if cardinal lr >= cardinal ll + delta then
                begin
                  match lr with
                  | Empty -> assert false
                  | Node{l=lrl;r=lrr;v=lrv;_} ->
-                    let call = if cl <= 4 * cr + 4 then bal else join in
-                    call (bal_left ll lv lrl) lrv (join lrr v r)
+                    bal (bal_left ll lv lrl) lrv (join lrr v r)
                end
              else
                create ll lv (join lr v r)
@@ -131,13 +130,12 @@ module Make(Ord: OrderedType) =
           match r with
           | Empty -> assert false
           | Node{l=rl;r=rr;v=rv;_} ->
-             if cardinal rl > cardinal rr then
+             if cardinal rl >= cardinal rr + delta then
                begin
                  match rl with
                  | Empty -> assert false
                  | Node{l=rll;r=rlr;v=rlv;_} ->
-                    let call = if cr <= 4 * cl + 4 then bal else join in
-                    call (join l v rll) rlv (bal_right rlr rv rr)
+                    bal (join l v rll) rlv (bal_right rlr rv rr)
                  end
                else
                  create (join l v rl) rv rr
@@ -152,7 +150,7 @@ module Make(Ord: OrderedType) =
           match l with
           | Empty -> assert false
           | Node{l=ll;r=lr;v=lv;_} ->
-             if cardinal lr > cardinal ll then
+             if cardinal lr >= cardinal ll + delta then
                begin
                  match lr with
                  | Empty -> assert false
@@ -160,14 +158,14 @@ module Make(Ord: OrderedType) =
                     create (bal_left ll lv lrl) lrv (join lrr v r)
                end
              else
-               create ll lv (join lr v r)
+               create ll lv (bal lr v r)
         end
       else if cr > (cl lsl 1) + delta then
         begin
           match r with
           | Empty -> assert false
           | Node{l=rl;r=rr;v=rv;_} ->
-             if cardinal rl > cardinal rr then
+             if cardinal rl >= cardinal rr + delta then
                begin
                  match rl with
                  | Empty -> assert false
@@ -175,7 +173,7 @@ module Make(Ord: OrderedType) =
                     create (join l v rll) rlv (bal_right rlr rv rr)
                  end
                else
-                 create (join l v rl) rv rr
+                 create (bal l v rl) rv rr
         end
       else
         Node{l; v; r; c=cl+cr+1}
@@ -187,7 +185,7 @@ module Make(Ord: OrderedType) =
           match l with
           | Empty -> assert false
           | Node{l=ll;r=lr;v=lv;_} ->
-             if cardinal lr > cardinal ll then
+             if cardinal lr >= cardinal ll + delta then
                begin
                  match lr with
                  | Empty -> assert false
@@ -195,10 +193,13 @@ module Make(Ord: OrderedType) =
                     create (bal_left ll lv lrl) lrv (join lrr v r)
                end
              else
-               create ll lv (join lr v r)
+               create ll lv (bal_left lr v r)
         end
       else
-        Node{l; v; r; c=cl+cr+1}
+        begin
+          assert (cr <= 2 * cl + delta);
+          Node{l; v; r; c=cl+cr+1}
+        end
 
     and bal_right l v r = (* r only is too big *)
       let cl = cardinal l and cr = cardinal r in
@@ -207,7 +208,7 @@ module Make(Ord: OrderedType) =
           match r with
           | Empty -> assert false
           | Node{l=rl;r=rr;v=rv;_} ->
-             if cardinal rl > cardinal rr then
+             if cardinal rl >= cardinal rr + delta then
                begin
                  match rl with
                  | Empty -> assert false
@@ -215,10 +216,13 @@ module Make(Ord: OrderedType) =
                     create (join l v rll) rlv (bal_right rlr rv rr)
                  end
                else
-                 create (join l v rl) rv rr
+                 create (bal_right l v rl) rv rr
         end
       else
-        Node{l; v; r; c=cl+cr+1}
+        begin
+          assert (cl <= 2 * cr + delta);
+          Node{l; v; r; c=cl+cr+1}
+        end
 
     (* Insertion of one element *)
 
@@ -277,8 +281,12 @@ module Make(Ord: OrderedType) =
         (Empty, t) -> t
       | (t, Empty) -> t
       | (_, _) ->
+         if cardinal t2 < cardinal t1 then
            let (v, r) = pop_min_elt t2 in
            join t1 v r
+         else
+           let (v, l) = pop_max_elt t1 in
+           join l v t2
 
     (* Splitting.  split x s returns a triple (l, present, r) where
         - l is the set of elements of s that are < x
