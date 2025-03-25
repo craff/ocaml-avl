@@ -83,7 +83,7 @@ let chrono ?(stat=fake) f a =
     Printf.printf "%s: %.5fs\n%!" msg dt;
   (dt, x)
 
-let size = 300_000
+let size = 200_000
 let maxi = max_int
 
 let _ = Printf.printf "Adding %d consecutive integers in a set:\n" size

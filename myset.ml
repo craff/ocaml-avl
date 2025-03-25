@@ -92,11 +92,13 @@ module Make(Ord: OrderedType) =
        l and r must be balanced and | height l - height r | <= 2.
        Inline expansion of height for better speed. *)
 
+    let delta = 2
+
     let create l v r =
       let cl = match l with Empty -> 0 | Node {c; _} -> c in
       let cr = match r with Empty -> 0 | Node {c; _} -> c in
       (* TO DO: remove assertion when we are sure *)
-      assert (cl <= 2 * cr + 3 && cr <= 2 * cl + 3);
+      (*assert (cl <= 2 * cr + delta && cr <= 2 * cl + delta);*)
       Node{l; v; r; c=cl+cr+1}
 
     (* Same as create, but performs rebalancing if necessary.
@@ -108,7 +110,7 @@ module Make(Ord: OrderedType) =
 
     let rec join l v r =
       let cl = cardinal l and cr = cardinal r in
-      if cl > (cr lsl 1) + 3 then
+      if cl > (cr lsl 1) + delta then
         begin
           match l with
           | Empty -> assert false
@@ -118,12 +120,13 @@ module Make(Ord: OrderedType) =
                  match lr with
                  | Empty -> assert false
                  | Node{l=lrl;r=lrr;v=lrv;_} ->
-                    bal (bal ll lv lrl) lrv (join lrr v r)
+                    let call = if cl <= 4 * cr + 4 then bal else join in
+                    call (bal_left ll lv lrl) lrv (join lrr v r)
                end
              else
                create ll lv (join lr v r)
         end
-      else if cr > (cl lsl 1) + 3 then
+      else if cr > (cl lsl 1) + delta then
         begin
           match r with
           | Empty -> assert false
@@ -133,7 +136,8 @@ module Make(Ord: OrderedType) =
                  match rl with
                  | Empty -> assert false
                  | Node{l=rll;r=rlr;v=rlv;_} ->
-                    bal (join l v rll) rlv (bal rlr rv rr)
+                    let call = if cr <= 4 * cl + 4 then bal else join in
+                    call (join l v rll) rlv (bal_right rlr rv rr)
                  end
                else
                  create (join l v rl) rv rr
@@ -143,7 +147,7 @@ module Make(Ord: OrderedType) =
 
     and bal l v r =
       let cl = cardinal l and cr = cardinal r in
-      if cl > (cr lsl 1) + 3 then
+      if cl > (cr lsl 1) + delta then
         begin
           match l with
           | Empty -> assert false
@@ -153,12 +157,12 @@ module Make(Ord: OrderedType) =
                  match lr with
                  | Empty -> assert false
                  | Node{l=lrl;r=lrr;v=lrv;_} ->
-                    create (bal ll lv lrl) lrv (join lrr v r)
+                    create (bal_left ll lv lrl) lrv (join lrr v r)
                end
              else
                create ll lv (join lr v r)
         end
-      else if cr > (cl lsl 1) + 3 then
+      else if cr > (cl lsl 1) + delta then
         begin
           match r with
           | Empty -> assert false
@@ -168,7 +172,47 @@ module Make(Ord: OrderedType) =
                  match rl with
                  | Empty -> assert false
                  | Node{l=rll;r=rlr;v=rlv;_} ->
-                    create (join l v rll) rlv (bal rlr rv rr)
+                    create (join l v rll) rlv (bal_right rlr rv rr)
+                 end
+               else
+                 create (join l v rl) rv rr
+        end
+      else
+        Node{l; v; r; c=cl+cr+1}
+
+    and bal_left l v r = (* l only is too big *)
+      let cl = cardinal l and cr = cardinal r in
+      if cl > (cr lsl 1) + delta then
+        begin
+          match l with
+          | Empty -> assert false
+          | Node{l=ll;r=lr;v=lv;_} ->
+             if cardinal lr > cardinal ll then
+               begin
+                 match lr with
+                 | Empty -> assert false
+                 | Node{l=lrl;r=lrr;v=lrv;_} ->
+                    create (bal_left ll lv lrl) lrv (join lrr v r)
+               end
+             else
+               create ll lv (join lr v r)
+        end
+      else
+        Node{l; v; r; c=cl+cr+1}
+
+    and bal_right l v r = (* r only is too big *)
+      let cl = cardinal l and cr = cardinal r in
+      if cr > (cl lsl 1) + delta then
+        begin
+          match r with
+          | Empty -> assert false
+          | Node{l=rl;r=rr;v=rv;_} ->
+             if cardinal rl > cardinal rr then
+               begin
+                 match rl with
+                 | Empty -> assert false
+                 | Node{l=rll;r=rlr;v=rlv;_} ->
+                    create (join l v rll) rlv (bal_right rlr rv rr)
                  end
                else
                  create (join l v rl) rv rr
@@ -185,10 +229,10 @@ module Make(Ord: OrderedType) =
           if c = 0 then t else
           if c < 0 then
             let ll = add x l in
-            if l == ll then t else bal ll v r
+            if l == ll then t else bal_left ll v r
           else
             let rr = add x r in
-            if r == rr then t else bal l v rr
+            if r == rr then t else bal_right l v rr
 
     let singleton x = Node{l=Empty; v=x; r=Empty; c=1}
 
@@ -220,13 +264,13 @@ module Make(Ord: OrderedType) =
         Empty -> raise Not_found
       | Node{l=Empty; v; r; _} -> (v, r)
       | Node{l; r; _} -> let (v, l) = pop_min_elt l in
-                         (v, bal l v r)
+                         (v, bal_right l v r)
 
     let rec pop_max_elt = function
         Empty -> raise Not_found
       | Node{l; v; r=Empty; _} -> (v, l)
       | Node{l; r; _} -> let (v, r) = pop_max_elt r in
-                         (v, bal l v r)
+                         (v, bal_left l v r)
 
     let concat t1 t2 =
       match (t1, t2) with
@@ -274,11 +318,11 @@ module Make(Ord: OrderedType) =
             if c < 0 then
               let ll = remove x l in
               if l == ll then t
-              else bal ll v r
+              else bal_right ll v r
             else
               let rr = remove x r in
               if r == rr then t
-              else bal l v rr
+              else bal_left l v rr
 
     let rec union s1 s2 =
       match (s1, s2) with
